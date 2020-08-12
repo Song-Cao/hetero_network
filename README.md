@@ -4,7 +4,7 @@
 * GWAS (more based on [EBI-GWAS catalog](https://www.ebi.ac.uk/gwas/docs/file-downloads)) `/cellar/users/ecdymore/GWAS_Context/Gene_by_Trait`
 
 * BioGRID (abstracts associated with interactions), use papers generating >=5 interactions:`/cellar/users/f6zheng/Data2/text_mining/biogrid` 
-
+* STRING (with PPI and coexp scores, etc.) (`/cellar/users/f6zheng/Data/Public_data/stringdb/2019-07-17`)
 
 # Plan
 
