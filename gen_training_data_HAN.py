@@ -6,7 +6,7 @@ from scipy.sparse import *
 
 par = argparse.ArgumentParser()
 par.add_argument('--nodelist', required=True, help='a file with a list of nodes, the union of nodes in each edge-type network; this file also can optionally followed by initial node features')
-par.add_argument('--nodelabel', required=True, help='a numpy matrix') #TODO: change to numpy; multiple columns; take one column for each test
+par.add_argument('--nodelabel', required=True, help='a numpy matrix')
 par.add_argument('--geneset_id', type=int, required=True, help='use to select a column in the numpy matirx')
 par.add_argument('--nets', nargs='+', help='a list of files for each edge-type network')
 par.add_argument('--enames', required = True, help='a list of edge-type names')
@@ -28,7 +28,8 @@ if df_nodes.shape[1] > 1:
     except:
         sys.exit("non-numerical features")
 else:
-    features = np.random.random((len(nodes), args.dim))
+    features = np.random.random((len(nodes), args.dim)) # TODO: thinking about initialization later
+features = csr_matrix(features)
 # ACM by default is sparse; probably make sense to create dense here
 
 enames = [l.strip() for l in open(args.enames).readlines()]
@@ -81,8 +82,9 @@ out_dict = {'label':mat_label,
             'train_idx': train,
             'val_idx':val,
             'test_idx':test,
-            'feature':features}
+            'feature':features,
+            'HetNet':{}}
 
 for i in range(len(edge_sparse_mats)):
-    out_dict[enames[i]] = edge_sparse_mats[i]
+    out_dict['HetNet'][enames[i]] = edge_sparse_mats[i]
 pickle.dump(out_dict, open(args.out, 'wb'))

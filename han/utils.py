@@ -98,7 +98,10 @@ sampling_configure = {
 def setup(args):
     args.update(default_configure)
     set_random_seed(args['seed'])
-    args['dataset'] = 'ACMRaw' if args['hetero'] else 'ACM'
+    if args['ds'] == None:
+        args['dataset'] = 'ACMRaw' if args['hetero'] else 'ACM'
+    else:
+        args['dataset'] = args['ds']
     args['device'] = 'cuda: 0' if torch.cuda.is_available() else 'cpu'
     args['log_dir'] = setup_log_dir(args)
     return args
@@ -218,13 +221,56 @@ def load_acm_raw(remove_self_loop):
     return hg, features, labels, num_classes, train_idx, val_idx, test_idx, \
             train_mask, val_mask, test_mask
 
+# Fan Zheng
+def get_data_dir():
+    return os.environ['HOME']+'/.dgl/ppi/' # move data to this directory before
+
+def load_ppi(dataset, remove_self_loop=False):
+    data_path = get_data_dir() + dataset + '.pkl'
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+
+    labels, features = torch.from_numpy(data['label'].todense()).long(), \
+                       torch.from_numpy(data['feature'].todense()).float()
+    num_classes = labels.shape[1]
+    labels = labels.nonzero()[:, 1]
+
+    if remove_self_loop:
+        num_nodes = data['label'].shape[0]
+        for k, _ in data['HetNet'].items():
+            data['HetNet'][k] = sparse.csr_matrix(data['HetNet'][k] - np.eye(num_nodes))
+
+    gs = [dgl.graph(data['HetNet'][k], ntype='protein', etype=k) for k, v in data['HetNet'].items()]
+
+    train_idx = torch.from_numpy(data['train_idx']).long().squeeze(0)
+    val_idx = torch.from_numpy(data['val_idx']).long().squeeze(0)
+    test_idx = torch.from_numpy(data['test_idx']).long().squeeze(0)
+
+    num_nodes = gs[0].number_of_nodes()
+    train_mask = get_binary_mask(num_nodes, train_idx)
+    val_mask = get_binary_mask(num_nodes, val_idx)
+    test_mask = get_binary_mask(num_nodes, test_idx)
+
+    print('dataset loaded')
+    pprint({
+        'dataset': dataset,
+        'train': train_mask.sum().item() / num_nodes,
+        'val': val_mask.sum().item() / num_nodes,
+        'test': test_mask.sum().item() / num_nodes
+    })
+
+    return gs, features, labels, num_classes, train_idx, val_idx, test_idx, \
+           train_mask, val_mask, test_mask
+
 def load_data(dataset, remove_self_loop=False):
     if dataset == 'ACM':
         return load_acm(remove_self_loop)
     elif dataset == 'ACMRaw':
         return load_acm_raw(remove_self_loop)
     else:
-        return NotImplementedError('Unsupported dataset {}'.format(dataset))
+        return load_ppi(dataset, remove_self_loop)
+    # else:
+    #     return NotImplementedError('Unsupported dataset {}'.format(dataset))
 
 class EarlyStopping(object):
     def __init__(self, patience=10):

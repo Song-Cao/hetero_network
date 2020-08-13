@@ -13,3 +13,14 @@ Fig. 2: Show basic heterogeneous network, with STRING or humanNet; compare to ho
 Fig. 3: Show that interactions can be literature dependent. Some pleiotropic proteins interact with a lot of things but interactions are specific to particular biological topics  
 Fig. 4: Use doc vectors as edge embedding to predict GWAS  
 Fig. 5: Intepret predictions with attention  
+
+# Workflow
+
+* Use `gen_training_data_HAN` to generate a pickle file that is similar to the ACM dataset used in original HAN paper `~/.dgl/ACM3025.pkl`
+* Put the created `pkl` file in `~/.dgl/ppi`
+* Run `python han/main.py --ds [xxx.pkl]`
+
+# Notes
+
+- Aug. 12; code run well. only have a test run (not really meaningful class and edges), don't overintepret, but seemingly class imbalance and feature initialization may be problems. Also need to further understand the code to generate prediction outputs, tune hyperparameters and output attention values.
+

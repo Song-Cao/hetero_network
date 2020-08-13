@@ -85,6 +85,7 @@ def main(args):
             break
 
     stopper.load_checkpoint(model)
+    #TODO: output predictiona
     test_loss, test_acc, test_micro_f1, test_macro_f1 = evaluate(model, g, features, labels, test_mask, loss_fcn)
     print('Test loss {:.4f} | Test Micro f1 {:.4f} | Test Macro f1 {:.4f}'.format(
         test_loss.item(), test_micro_f1, test_macro_f1))
@@ -101,6 +102,7 @@ if __name__ == '__main__':
                         help='Dir for saving training results')
     parser.add_argument('--hetero', action='store_true',
                         help='Use metapath coalescing with DGL\'s own dataset')
+    parser.add_argument('--ds', help='customized data set')
     args = parser.parse_args().__dict__
 
     args = setup(args)
