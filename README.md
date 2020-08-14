@@ -1,3 +1,6 @@
+# Presentation
+[Slides](https://docs.google.com/presentation/d/1pLQjgdYT3jEJYzpIW5BcekAlCagWzhv8FiPQ3m8OTjI/edit?usp=sharing)
+
 # Resource
 
 * GWAS (180 used in Choobdar et al. 2019 Nature Methods/the DREAM challenge paper) `/cellar/users/f6zheng/Data2/GWAS/4_gwas_datasets`
