@@ -1,3 +1,5 @@
+Collaborators: don't distribute without permission.
+
 # Presentation
 [Slides](https://docs.google.com/presentation/d/1pLQjgdYT3jEJYzpIW5BcekAlCagWzhv8FiPQ3m8OTjI/edit?usp=sharing)
 
