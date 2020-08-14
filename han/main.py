@@ -30,7 +30,7 @@ def main(args):
     # Otherwise, it will be a list of homogeneous graphs.
     g, features, labels, num_classes, train_idx, val_idx, test_idx, train_mask, \
     val_mask, test_mask = load_data(args['dataset'])
-    print(labels)
+    # print(labels)
     if hasattr(torch, 'BoolTensor'):
         train_mask = train_mask.bool()
         val_mask = val_mask.bool()
@@ -62,9 +62,9 @@ def main(args):
         g = [graph.to(args['device']) for graph in g]
 
     stopper = EarlyStopping(patience=args['patience'])
-    weights = [args['weight'], 1.0-args['weight']]
-    class_weights = torch.FloatTensor(weights).cuda()
-    loss_fcn = torch.nn.CrossEntropyLoss(weight=class_weights) #TODO: add weight; the weight mimics parameter in network propagation
+    # loss_fcn = torch.nn.CrossEntropyLoss()
+    class_weights = torch.FloatTensor(args['weight']).cuda()
+    loss_fcn = torch.nn.CrossEntropyLoss(weight=class_weights) # I think the weight mimics parameter in network propagation
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'],
                                  weight_decay=args['weight_decay'])
 
@@ -98,6 +98,10 @@ def main(args):
     all_prediction[test_mask.cpu()] = test_prediction
     np.save(args['ds'] + '_pred', all_prediction)
 
+    # output attention values
+    semantic_attention = model.layers[0].semantic_attention.beta.cpu()
+    np.save(args['ds'] + '_semantic_attn', semantic_attention)
+
     print('Test loss {:.4f} | Test Micro f1 {:.4f} | Test Macro f1 {:.4f}'.format(
         test_loss.item(), test_micro_f1, test_macro_f1))
 
@@ -114,9 +118,8 @@ if __name__ == '__main__':
     parser.add_argument('--hetero', action='store_true',
                         help='Use metapath coalescing with DGL\'s own dataset')
     parser.add_argument('--ds', help='customized data set')
-    parser.add_argument('--weight', default=0.5, type=float, help='a weight passed to the class 0 (major class). It is in order to fight with the class imbalance. It should be similar to parameters in network propagation')
+    parser.add_argument('--weight', nargs='+', type=float, help='a weight passed to the class 0 (major class). It is in order to fight with the class imbalance. It should be similar to parameters in network propagation')
     args = parser.parse_args().__dict__
-    assert (args['weight'] < 1) and (args['weight'] > 0)
     args = setup(args)
 
     main(args)

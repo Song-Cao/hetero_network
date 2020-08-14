@@ -13,10 +13,12 @@ class SemanticAttention(nn.Module):
             nn.Tanh(),
             nn.Linear(hidden_size, 1, bias=False)
         )
+        self.beta = None
 
     def forward(self, z):
         w = self.project(z).mean(0)                    # (M, 1)
-        beta = torch.softmax(w, dim=0)                 # (M, 1)
+        beta = torch.softmax(w, dim=0)  # (M, 1)
+        self.beta = beta
         beta = beta.expand((z.shape[0],) + beta.shape) # (N, M, 1)
 
         return (beta * z).sum(1)                       # (N, D * K)
@@ -60,10 +62,11 @@ class HANLayer(nn.Module):
         semantic_embeddings = []
 
         for i, g in enumerate(gs):
-            semantic_embeddings.append(self.gat_layers[i](g, h).flatten(1))
+            semantic_embeddings.append(self.gat_layers[i](g, h).flatten(1)) # TODO: output this
         semantic_embeddings = torch.stack(semantic_embeddings, dim=1)                  # (N, M, D * K)
 
-        return self.semantic_attention(semantic_embeddings)                            # (N, D * K)
+        return self.semantic_attention(semantic_embeddings)                         # (N, D * K)
+        # TODO: output this
 
 class HAN(nn.Module):
     def __init__(self, num_meta_paths, in_size, hidden_size, out_size, num_heads, dropout):
