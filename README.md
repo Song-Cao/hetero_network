@@ -21,6 +21,7 @@ Fig. 5: Intepret predictions with attention
 
 # Workflow
 
+* Use `gwas_2_npy.py` to create network-specific numpy array
 * Use `gen_training_data_HAN,py` to generate a pickle file that is similar to the ACM dataset used in original HAN paper `~/.dgl/ACM3025.pkl`
 * Put the created `pkl` file in `~/.dgl/ppi`
 * Run `python han/main.py --ds [xxx.pkl]`
