@@ -29,4 +29,4 @@ Fig. 5: Intepret predictions with attention
 # Notes
 
 - Aug. 12; code run well. only have a test run (not really meaningful class and edges), don't overintepret, but seemingly class imbalance and feature initialization may be problems. Also need to further understand the code to generate prediction outputs, tune hyperparameters and output attention values.
-
+- Aug. 25: run HAN on all GWAS set, tried a few different class weights. Don't expect the performance will be amazing; need some baseline (network propagation to decide)
