@@ -11,19 +11,21 @@ def score(logits, labels):
     labels = labels.cpu().numpy()
 
     accuracy = (prediction == labels).sum() / len(prediction)
+    recall = 1.0*(prediction * labels == 1).sum() / (labels == 1).sum()
+    precision = 1.0*(prediction * labels == 1).sum() / (prediction == 1).sum()
     micro_f1 = f1_score(labels, prediction, average='micro')
     macro_f1 = f1_score(labels, prediction, average='macro')
 
-    return accuracy, micro_f1, macro_f1, prediction
+    return accuracy, micro_f1, macro_f1, prediction, recall, precision
 
 def evaluate(model, g, features, labels, mask, loss_func):
     model.eval()
     with torch.no_grad():
         logits = model(g, features)
     loss = loss_func(logits[mask], labels[mask])
-    accuracy, micro_f1, macro_f1, prediction = score(logits[mask], labels[mask])
+    accuracy, micro_f1, macro_f1, prediction, recall, precision = score(logits[mask], labels[mask])
 
-    return loss, accuracy, micro_f1, macro_f1, prediction
+    return loss, accuracy, micro_f1, macro_f1, prediction, recall, precision
 
 def main(args):
     # If args['hetero'] is True, g would be a heterogeneous graph.
@@ -77,33 +79,32 @@ def main(args):
         loss.backward()
         optimizer.step()
 
-        train_acc, train_micro_f1, train_macro_f1, train_prediction = score(logits[train_mask], labels[train_mask])
-        val_loss, val_acc, val_micro_f1, val_macro_f1, val_prediction = evaluate(model, g, features, labels, val_mask, loss_fcn)
+        train_acc, train_micro_f1, train_macro_f1, train_prediction, train_recall, train_precision = score(logits[train_mask], labels[train_mask])
+        val_loss, val_acc, val_micro_f1, val_macro_f1, val_prediction, val_recall, val_precision = evaluate(model, g, features, labels, val_mask, loss_fcn)
         early_stop = stopper.step(val_loss.data.item(), val_acc, model)
 
-        print('Epoch {:d} | Train Loss {:.4f} | Train Micro f1 {:.4f} | Train Macro f1 {:.4f} | '
-              'Val Loss {:.4f} | Val Micro f1 {:.4f} | Val Macro f1 {:.4f}'.format(
-            epoch + 1, loss.item(), train_micro_f1, train_macro_f1, val_loss.item(), val_micro_f1, val_macro_f1))
+        print('Epoch {:d} | Train Loss {:.4f} | Train Micro f1 {:.4f} | Train Macro f1 {:.4f} | Train Recall {:.4f} | Train Precision {:.4f} | Val Loss {:.4f} | Val Micro f1 {:.4f} | Val Macro f1 {:.4f} | Val Recall {:.4f} | Val Precision {:.4f}'.format(
+            epoch + 1, loss.item(), train_micro_f1, train_macro_f1, train_recall, train_precision, val_loss.item(), val_micro_f1, val_macro_f1, val_recall, val_precision))
 
         if early_stop:
             break
 
     stopper.load_checkpoint(model)
-    test_loss, test_acc, test_micro_f1, test_macro_f1, test_prediction = evaluate(model, g, features, labels, test_mask, loss_fcn)
+    test_loss, test_acc, test_micro_f1, test_macro_f1, test_prediction, test_recall, test_precision = evaluate(model, g, features, labels, test_mask, loss_fcn)
 
     # output train, val, test prediction in the same array
     all_prediction = np.zeros(len(labels),)
     all_prediction[train_mask.cpu()] = train_prediction # does train mask need to be convert back to cpu
     all_prediction[val_mask.cpu()] = val_prediction
     all_prediction[test_mask.cpu()] = test_prediction
-    np.save(args['ds'] + '_pred', all_prediction)
+    np.save(args['ds'] + '_' + args['runid'] + '_pred', all_prediction)
 
     # output attention values
     semantic_attention = model.layers[0].semantic_attention.beta.cpu()
-    np.save(args['ds'] + '_semantic_attn', semantic_attention)
+    np.save(args['ds'] + '_' + args['runid'] + '_semantic_attn', semantic_attention)
 
-    print('Test loss {:.4f} | Test Micro f1 {:.4f} | Test Macro f1 {:.4f}'.format(
-        test_loss.item(), test_micro_f1, test_macro_f1))
+    print('Test loss {:.4f} | Test Micro f1 {:.4f} | Test Macro f1 {:.4f} | Test Recall f1 {:.4f}  | Test Precision {:.4f}'.format(
+        test_loss.item(), test_micro_f1, test_macro_f1, test_recall, test_precision))
 
 if __name__ == '__main__':
     import argparse
@@ -118,7 +119,8 @@ if __name__ == '__main__':
     parser.add_argument('--hetero', action='store_true',
                         help='Use metapath coalescing with DGL\'s own dataset')
     parser.add_argument('--ds', help='customized data set')
-    parser.add_argument('--weight', nargs='+', type=float, help='a weight passed to the class 0 (major class). It is in order to fight with the class imbalance. It should be similar to parameters in network propagation')
+    parser.add_argument('--weight', nargs='+', default=[1.0,1.0], type=float, help='a weight passed to the class 0 (major class). It is in order to fight with the class imbalance. It should be similar to parameters in network propagation')
+    parser.add_argument('--runid', required=True, help='a string to distinguish the identity of experiment')
     args = parser.parse_args().__dict__
     args = setup(args)
 

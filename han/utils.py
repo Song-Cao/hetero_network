@@ -240,7 +240,7 @@ def load_ppi(dataset, remove_self_loop=False):
         for k, _ in data['HetNet'].items():
             data['HetNet'][k] = sparse.csr_matrix(data['HetNet'][k] - np.eye(num_nodes))
 
-    gs = [dgl.graph(data['HetNet'][k], ntype='protein', etype=k) for k, v in data['HetNet'].items()]
+    gs = [dgl.graph(data['HetNet'][k], ntype='protein', etype=k) for k in sorted(data['HetNet'].keys())]
 
     train_idx = torch.from_numpy(data['train_idx']).long().squeeze(0)
     val_idx = torch.from_numpy(data['val_idx']).long().squeeze(0)
@@ -294,8 +294,8 @@ class EarlyStopping(object):
             if self.counter >= self.patience:
                 self.early_stop = True
         else:
-            if (loss <= self.best_loss) and (acc >= self.best_acc):
-                self.save_checkpoint(model)
+            # if (loss <= self.best_loss) and (acc >= self.best_acc):
+                # self.save_checkpoint(model)
             self.best_loss = np.min((loss, self.best_loss))
             self.best_acc = np.max((acc, self.best_acc))
             self.counter = 0
